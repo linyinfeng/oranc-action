@@ -9,11 +9,11 @@ inputs:
   repositoryPart1:
     required: true
     description: 'first part of the repository name'
-    default: '${{ github.actor }}'
+    default: '${{ github.repository_owner }}'
   repositoryPart2:
     required: true
     description: 'second part of the repository name'
-    default: 'oranc'
+    default: 'oranc-cache'
   upstream:
     required: true
     description: 'space-separated list of cache upstreams'

@@ -100,3 +100,7 @@ lib/**/*
 
 # Nix
 .direnv
+result*
+
+# VSCode
+.vscode

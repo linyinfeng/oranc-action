@@ -17,8 +17,20 @@ jobs:
           npm run all
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    services:
+      oranc:
+        image: ghcr.io/linyinfeng/oranc
     steps:
       - uses: actions/checkout@v2
+      - name: Install nix
+        uses: cachix/install-nix-action@master
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
       - uses: ./
         with:
-          milliseconds: 1000
+          signingKey: ${{ secrets.NIX_SINGING_KEY }}
+      - run: |
+          nix --experimental-features nix-command \
+            build ./test/test-package.nix
