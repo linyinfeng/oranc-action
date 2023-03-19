@@ -1,11 +1,44 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'oranc'
+description: 'nix build with the help of caching with oranc'
+author: 'Lin Yinfeng'
 inputs:
-  milliseconds: # change this
+  registry:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'oci registry to use'
+    default: 'ghcr.io'
+  repositoryPart1:
+    required: true
+    description: 'first part of the repository name'
+    default: '${{ github.actor }}'
+  repositoryPart2:
+    required: true
+    description: 'second part of the repository name'
+    default: 'oranc'
+  upstream:
+    required: true
+    description: 'space-separated list of cache upstreams'
+    default: 'https://cache.nixos.org'
+  oranc:
+    required: true
+    description: 'address of oranc'
+    default: 'http://oranc'
+  anonymous:
+    required: true
+    description: 'weather remain anonymous'
+    default: 'false'
+  username:
+    required: false
+    description: 'oci registry username'
+    default: '${{ github.actor }}'
+  password:
+    required: false
+    description: 'oci registry password'
+    default: '${{ secrets.GITHUB_TOKEN }}'
+  signingKey:
+    required: true
+    description: 'nix signing key'
 runs:
   using: 'node16'
   main: 'dist/index.js'
+  # same entry point for simplicity
+  post: 'dist/index.js'
