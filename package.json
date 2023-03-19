@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
-  "version": "0.0.1",
+  "name": "oranc-action",
+  "version": "1.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "OCI Registry As Nix Cache",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -22,7 +22,7 @@
     "node",
     "setup"
   ],
-  "author": "",
+  "author": "Lin Yinfeng <lin.yinfeng@outlook.com>",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
