@@ -48,6 +48,8 @@ const xdg = __importStar(__nccwpck_require__(275));
 exports.IsPost = !!process.env['STATE_isPost'];
 const dataDirectory = '/tmp/oranc-action';
 const commonNixArgs = ['--experimental-features', 'nix-command flakes'];
+// check upstream substituters first cleaner log
+const substituterPriority = 50;
 const registry = core.getInput('registry');
 const repositoryPart1 = core.getInput('repositoryPart1');
 const repositoryPart2 = core.getInput('repositoryPart2');
@@ -100,7 +102,7 @@ function setup() {
                 throw Error('failed to convert singing secret key to public key');
             }
             const publicKey = convertOutput.stdout;
-            const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`;
+            const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}?priority=${substituterPriority}`;
             const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
 extra-secret-key-files = ${dataDirectory}/signing-key
