@@ -37,4 +37,4 @@ jobs:
           orancContainer: '${{ job.services.oranc.id }}'
           signingKey: ${{ secrets.NIX_SINGING_KEY }}
       - run: |
-          nix --experimental-features nix-command build --file ./test/test-package.nix
+          nix flake check github:linyinfeng/oranc
