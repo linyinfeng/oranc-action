@@ -10,15 +10,31 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: '*'
       - run: |
-          npm install
+          pnpm install
       - run: |
-          npm run all
+          pnpm run all
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    services:
+      oranc:
+        image: ghcr.io/linyinfeng/oranc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Install nix
+        uses: cachix/install-nix-action@v20
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
       - uses: ./
         with:
-          milliseconds: 1000
+          orancContainer: '${{ job.services.oranc.id }}'
+          signingKey: ${{ secrets.NIX_SINGING_KEY }}
+      - run: |
+          nix --experimental-features nix-command build --file ./test/test-package.nix
