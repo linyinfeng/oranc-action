@@ -33,7 +33,7 @@ inputs:
   password:
     required: false
     description: 'oci registry password'
-    default: '${{ secrets.GITHUB_TOKEN }}'
+    default: '${{ github.token }}'
   signingKey:
     required: true
     description: 'nix signing key'
