@@ -20,8 +20,8 @@ check:
       image: ghcr.io/linyinfeng/oranc
   steps:
     - uses: actions/checkout@v3
-    - name: Install nix
-      uses: cachix/install-nix-action@v20
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v1
     - uses: linyinfeng/oranc-action@v1
       with:
         # pass oranc container id to the action
