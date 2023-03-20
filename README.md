@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-After the first run, the `ghcr.io/{OWNER}/oranc-cache` package will be created (under default configuration). You need to make the package public otherwise caching will not work. The cache will also be publicly accessible through `https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache`.
+After the first run, the `ghcr.io/{OWNER}/oranc-cache` package will be created (under default configuration). You need to make the package public otherwise caching will not work.
 
 ```yaml
 check:
@@ -33,6 +33,17 @@ check:
     - run: |
         nix build
 ```
+
+The cache can be shared with multiple repositories, you need to add `write` permission for these repositories in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
+
+The cache will also be publicly accessible through `https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache`. Run `nix key convert-secret-to-public` to get the public key from the private signing key. Then use the cache by setting `nix.conf` like this.
+
+```text
+substituters = https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache
+trusted-public-keys = YOUR_PUBLIC_KEY
+```
+
+`oranc.li7g.com` might be slow because of limited machine resources, you can easily self-host an instance according to the README of [oranc](https://github.com/linyinfeng/oranc).
 
 ## Configuration
 
