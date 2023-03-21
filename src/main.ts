@@ -154,14 +154,18 @@ async function upload(): Promise<void> {
     if (storePaths.length !== 0) {
       core.startGroup('oranc: push store paths')
       const cacheUrl = `s3://${repositoryPart2}?endpoint=${orancUrlFinal}/${registry}/${repositoryPart1}`
+      // TODO switch to the `--stdin` flag of nix
+      // wait the release of https://github.com/NixOS/nix/pull/7594
       await exec.exec(
-        'nix',
-        [...commonNixArgs, 'copy', '--to', cacheUrl, ...storePaths],
+        'xargs',
+        ['nix', ...commonNixArgs, 'copy', '--to', cacheUrl],
         {
           env: {
+            ...process.env,
             AWS_ACCESS_KEY_ID: awsAccessKeyId,
             AWS_SECRET_ACCESS_KEY: awsSecretAccessKey
-          }
+          },
+          input: Buffer.from(storePaths.join('\n'))
         }
       )
       core.endGroup()

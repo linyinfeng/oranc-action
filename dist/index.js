@@ -173,11 +173,11 @@ function upload() {
             if (storePaths.length !== 0) {
                 core.startGroup('oranc: push store paths');
                 const cacheUrl = `s3://${repositoryPart2}?endpoint=${orancUrlFinal}/${registry}/${repositoryPart1}`;
-                yield exec.exec('nix', [...commonNixArgs, 'copy', '--to', cacheUrl, ...storePaths], {
-                    env: {
-                        AWS_ACCESS_KEY_ID: awsAccessKeyId,
-                        AWS_SECRET_ACCESS_KEY: awsSecretAccessKey
-                    }
+                // TODO switch to the `--stdin` flag of nix
+                // wait the release of https://github.com/NixOS/nix/pull/7594
+                yield exec.exec('xargs', ['nix', ...commonNixArgs, 'copy', '--to', cacheUrl], {
+                    env: Object.assign(Object.assign({}, process.env), { AWS_ACCESS_KEY_ID: awsAccessKeyId, AWS_SECRET_ACCESS_KEY: awsSecretAccessKey }),
+                    input: Buffer.from(storePaths.join('\n'))
                 });
                 core.endGroup();
             }
