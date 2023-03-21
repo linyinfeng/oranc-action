@@ -167,19 +167,34 @@ function upload() {
             const storePathsPreBuildSet = new Set(storePathsPreBuild);
             core.endGroup();
             core.startGroup('oranc: get store paths to push');
+            core.info(`begin getting all store paths...`);
+            let begin = performance.now();
             const AllStorePaths = yield all_store_paths();
+            let end = performance.now();
+            core.info(`took ${end - begin} ms.`);
+            core.info(`begin calculating paths for pushing...`);
+            begin = performance.now();
             const storePaths = AllStorePaths.filter(p => !storePathsPreBuildSet.has(p));
+            end = performance.now();
+            core.info(`took ${end - begin} ms.`);
             core.endGroup();
             if (storePaths.length !== 0) {
                 core.startGroup('oranc: push store paths');
                 const cacheUrl = `s3://${repositoryPart2}?endpoint=${orancUrlFinal}/${registry}/${repositoryPart1}`;
                 // TODO switch to the `--stdin` flag of nix
-                // wait the release of https://github.com/NixOS/nix/pull/7594
+                // wait the release of https://github.com/NixOS/nix/pull/7594\
+                core.info(`begin coping...`);
+                begin = performance.now();
                 yield exec.exec('xargs', ['nix', ...commonNixArgs, 'copy', '--to', cacheUrl], {
                     env: Object.assign(Object.assign({}, process.env), { AWS_ACCESS_KEY_ID: awsAccessKeyId, AWS_SECRET_ACCESS_KEY: awsSecretAccessKey }),
                     input: Buffer.from(storePaths.join('\n'))
                 });
+                end = performance.now();
+                core.info(`copying took ${end - begin} ms`);
                 core.endGroup();
+            }
+            else {
+                core.info(`skipped, no paths for copying`);
             }
         }
         catch (error) {

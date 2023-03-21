@@ -147,15 +147,27 @@ async function upload(): Promise<void> {
     core.endGroup()
 
     core.startGroup('oranc: get store paths to push')
+    core.info(`begin getting all store paths...`)
+    let begin = performance.now()
     const AllStorePaths = await all_store_paths()
+    let end = performance.now()
+    core.info(`took ${end - begin} ms.`)
+
+    core.info(`begin calculating paths for pushing...`)
+    begin = performance.now()
     const storePaths = AllStorePaths.filter(p => !storePathsPreBuildSet.has(p))
+    end = performance.now()
+    core.info(`took ${end - begin} ms.`)
     core.endGroup()
 
     if (storePaths.length !== 0) {
       core.startGroup('oranc: push store paths')
       const cacheUrl = `s3://${repositoryPart2}?endpoint=${orancUrlFinal}/${registry}/${repositoryPart1}`
       // TODO switch to the `--stdin` flag of nix
-      // wait the release of https://github.com/NixOS/nix/pull/7594
+      // wait the release of https://github.com/NixOS/nix/pull/7594\
+
+      core.info(`begin coping...`)
+      begin = performance.now()
       await exec.exec(
         'xargs',
         ['nix', ...commonNixArgs, 'copy', '--to', cacheUrl],
@@ -168,7 +180,11 @@ async function upload(): Promise<void> {
           input: Buffer.from(storePaths.join('\n'))
         }
       )
+      end = performance.now()
+      core.info(`copying took ${end - begin} ms`)
       core.endGroup()
+    } else {
+      core.info(`skipped, no paths for copying`)
     }
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
