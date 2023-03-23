@@ -52,10 +52,12 @@ const commonNixArgs = ['--experimental-features', 'nix-command flakes'];
 const registry = core.getInput('registry');
 const repositoryPart1 = core.getInput('repositoryPart1');
 const repositoryPart2 = core.getInput('repositoryPart2');
-const orancType = core.getInput('orancType');
-const orancContainer = core.getInput('orancContainer');
-const orancUrl = core.getInput('orancUrl');
+const orancServerType = core.getInput('orancServerType');
+const orancServerContainer = core.getInput('orancServerContainer');
+const orancServerUrl = core.getInput('orancServerUrl');
 const orancLog = core.getInput('orancLog');
+const orancCli = core.getInput('orancCli');
+const orancCliExtraArgs = core.getInput('orancCliExtraArgs');
 const anonymous = core.getInput('anonymous');
 const username = core.getInput('username');
 const password = core.getInput('password');
@@ -68,12 +70,12 @@ function setup() {
         try {
             core.startGroup('oranc: get oranc instance url');
             let orancUrlFinal;
-            if (orancType === 'docker') {
+            if (orancServerType === 'docker') {
                 const dockerInspectOutput = yield exec.getExecOutput('docker', [
                     'inspect',
                     '--format',
                     '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
-                    orancContainer
+                    orancServerContainer
                 ]);
                 if (dockerInspectOutput.exitCode !== 0) {
                     throw Error('failed to run docker inspect');
@@ -82,11 +84,11 @@ function setup() {
                 orancUrlFinal = `http://${ip}`;
                 core.setOutput('orancUrl', orancUrlFinal);
             }
-            else if (orancType === 'url') {
-                orancUrlFinal = orancUrl;
+            else if (orancServerType === 'url') {
+                orancUrlFinal = orancServerUrl;
             }
             else {
-                throw Error(`invalid orancType: '${orancType}'`);
+                throw Error(`invalid orancServerType: '${orancServerType}'`);
             }
             core.endGroup();
             core.startGroup('oranc: setting up data directory');
@@ -127,7 +129,7 @@ extra-trusted-public-keys = ${publicKey}
             yield exec.exec('nix', [
                 ...commonNixArgs,
                 'build',
-                'github:linyinfeng/oranc',
+                orancCli,
                 '--out-link',
                 `${dataDirectory}/oranc`,
                 '--extra-substituters',
@@ -170,44 +172,42 @@ function upload() {
             end = performance.now();
             core.info(`took ${end - begin} ms.`);
             core.endGroup();
-            if (storePaths.length !== 0) {
-                core.startGroup('oranc: push store paths');
-                let credentials = {};
-                if (anonymous !== 'true') {
-                    credentials = {
-                        ORANC_USERNAME: username,
-                        ORANC_PASSWORD: password
-                    };
-                }
-                core.info(`begin coping...`);
-                begin = performance.now();
-                yield exec.exec('sudo', // to open nix db
-                [
-                    '-E',
-                    `${dataDirectory}/oranc/bin/oranc`,
-                    'push',
-                    '--no-closure',
-                    '--registry',
-                    registry,
-                    '--repository',
-                    `${repositoryPart1}/${repositoryPart2}`,
-                    '--parallel',
-                    parallel,
-                    '--max-retry',
-                    maxRetry,
-                    '--zstd-level',
-                    zstdLevel
-                ], {
-                    env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), credentials),
-                    input: Buffer.from(storePaths.join('\n'))
-                });
-                end = performance.now();
-                core.info(`copying took ${end - begin} ms`);
-                core.endGroup();
+            core.startGroup('oranc: push store paths');
+            let credentials = {};
+            if (anonymous !== 'true') {
+                credentials = {
+                    ORANC_USERNAME: username,
+                    ORANC_PASSWORD: password
+                };
             }
-            else {
-                core.info(`skipped, no paths for copying`);
-            }
+            const extraArgsEncoded = orancCliExtraArgs.split(' ');
+            const extraArgs = extraArgsEncoded.map(c => decodeURI(c));
+            core.info(`begin coping...`);
+            begin = performance.now();
+            yield exec.exec('sudo', // to open nix db
+            [
+                '-E',
+                `${dataDirectory}/oranc/bin/oranc`,
+                'push',
+                '--no-closure',
+                '--registry',
+                registry,
+                '--repository',
+                `${repositoryPart1}/${repositoryPart2}`,
+                '--parallel',
+                parallel,
+                '--max-retry',
+                maxRetry,
+                '--zstd-level',
+                zstdLevel,
+                ...extraArgs
+            ], {
+                env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), credentials),
+                input: Buffer.from(storePaths.join('\n'))
+            });
+            end = performance.now();
+            core.info(`copying took ${end - begin} ms`);
+            core.endGroup();
         }
         catch (error) {
             if (error instanceof Error)

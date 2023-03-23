@@ -18,20 +18,27 @@ inputs:
     required: true
     description: 'space-separated list of cache upstreams'
     default: 'https://cache.nixos.org'
-  orancType:
+  orancServerType:
     required: true
     description: 'either "docker" or "url"'
     default: 'docker'
-  orancContainer:
+  orancServerContainer:
     required: false
     description: 'docker container id of oranc'
-  orancUrl:
+  orancServerUrl:
     required: false
     description: 'docker container name or id of oranc'
+  orancCli:
+    required: true
+    description: 'oranc CLI package to use'
+    default: 'github:linyinfeng/oranc'
   orancLog:
     required: true
     description: 'log string used in pushing'
     default: 'oranc=info'
+  orancCliExtraArgs:
+    description: 'arguments pass to oranc cli, URL-encoded, separated by space'
+    default: ''
   anonymous:
     required: true
     description: 'weather remain anonymous'

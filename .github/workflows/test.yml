@@ -20,12 +20,13 @@ jobs:
           pnpm run all
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     services:
       oranc:
         image: ghcr.io/linyinfeng/oranc
+      registry:
+        image: registry
+        ports:
+          - 5000:5000
     steps:
       - uses: actions/checkout@v3
       - name: Install nix
@@ -34,9 +35,9 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: ./
         with:
-          orancContainer: '${{ job.services.oranc.id }}'
+          orancServerContainer: ${{ job.services.oranc.id }}
           signingKey: ${{ secrets.NIX_SINGING_KEY }}
-          # use the test repository
-          repositoryPart2: oranc-cache-test
+          registry: localhost:5000
+          orancCliExtraArgs: --no-ssl
       - run: |
           nix build --file ./test
