@@ -168,8 +168,9 @@ async function upload(): Promise<void> {
       core.info(`begin coping...`)
       begin = performance.now()
       await exec.exec(
-        `${dataDirectory}/oranc/bin/oranc`,
+        'sudo', // to open nix db
         [
+          `${dataDirectory}/oranc/bin/oranc`,
           'push',
           '--no-closure',
           '--registry',

@@ -186,7 +186,9 @@ function upload() {
                 }
                 core.info(`begin coping...`);
                 begin = performance.now();
-                yield exec.exec(`${dataDirectory}/oranc/bin/oranc`, [
+                yield exec.exec('sudo', // to open nix db
+                [
+                    `${dataDirectory}/oranc/bin/oranc`,
                     'push',
                     '--no-closure',
                     '--registry',
