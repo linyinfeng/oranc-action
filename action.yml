@@ -39,7 +39,7 @@ inputs:
   username:
     required: false
     description: 'oci registry username'
-    default: '${{ github.actor }}'
+    default: '$'
   password:
     required: false
     description: 'oci registry password'
