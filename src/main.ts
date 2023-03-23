@@ -9,7 +9,6 @@ export const IsPost = !!process.env['STATE_isPost']
 const dataDirectory = '/tmp/oranc-action'
 const commonNixArgs = ['--experimental-features', 'nix-command flakes']
 // check upstream substituters first cleaner log
-const substituterPriority = 50
 
 const registry = core.getInput('registry')
 const repositoryPart1 = core.getInput('repositoryPart1')
@@ -17,10 +16,14 @@ const repositoryPart2 = core.getInput('repositoryPart2')
 const orancType = core.getInput('orancType')
 const orancContainer = core.getInput('orancContainer')
 const orancUrl = core.getInput('orancUrl')
+const orancLog = core.getInput('orancLog')
 const anonymous = core.getInput('anonymous')
 const username = core.getInput('username')
 const password = core.getInput('password')
 const signingKey = core.getInput('signingKey')
+const parallel = core.getInput('parallel')
+const maxRetry = core.getInput('maxRetry')
+const zstdLevel = core.getInput('zstdLevel')
 
 async function setup(): Promise<void> {
   try {
@@ -44,7 +47,6 @@ async function setup(): Promise<void> {
     } else {
       throw Error(`invalid orancType: '${orancType}'`)
     }
-    core.saveState('orancUrl', orancUrlFinal)
     core.endGroup()
 
     core.startGroup('oranc: setting up data directory')
@@ -70,7 +72,7 @@ async function setup(): Promise<void> {
       throw Error('failed to convert singing secret key to public key')
     }
     const publicKey = convertOutput.stdout
-    const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}?priority=${substituterPriority}`
+    const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`
     const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
 extra-secret-key-files = ${dataDirectory}/signing-key
@@ -101,6 +103,20 @@ extra-secret-key-files = ${dataDirectory}/signing-key
     }
     core.endGroup()
 
+    core.startGroup('oranc: install oranc')
+    await exec.exec('nix', [
+      ...commonNixArgs,
+      'build',
+      'github:linyinfeng/oranc',
+      '--out-link',
+      `${dataDirectory}/oranc`,
+      '--extra-substituters',
+      `https://linyinfeng.cachix.org`,
+      '--extra-trusted-public-keys',
+      'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
+    ])
+    core.endGroup()
+
     core.startGroup('oranc: record store-paths-pre-build')
     const allStorePaths = await all_store_paths()
     await fs.writeFile(
@@ -115,26 +131,6 @@ extra-secret-key-files = ${dataDirectory}/signing-key
 
 async function upload(): Promise<void> {
   try {
-    core.startGroup('oranc: get oranc url')
-    const orancUrlFinal = core.getState('orancUrl')
-    core.endGroup()
-
-    core.startGroup('oranc: setup push credentials')
-    let awsAccessKeyId = ''
-    let awsSecretAccessKey = ''
-    if (anonymous === 'false') {
-      const plainCredential = `${username}:${password}`
-      awsAccessKeyId = Buffer.from(plainCredential).toString('base64')
-      awsSecretAccessKey = '_'
-    } else if (anonymous === 'true') {
-      // do nothing
-    } else {
-      throw Error(
-        `invalid anonymous value: '${anonymous}', require 'true' or 'false'`
-      )
-    }
-    core.endGroup()
-
     core.startGroup('oranc: get store-paths-pre-build')
     const storePathsPreBuildContent = await fs.readFile(
       `${dataDirectory}/store-paths-pre-build`
@@ -162,20 +158,36 @@ async function upload(): Promise<void> {
 
     if (storePaths.length !== 0) {
       core.startGroup('oranc: push store paths')
-      const cacheUrl = `s3://${repositoryPart2}?endpoint=${orancUrlFinal}/${registry}/${repositoryPart1}`
-      // TODO switch to the `--stdin` flag of nix
-      // wait the release of https://github.com/NixOS/nix/pull/7594\
-
+      let credentials = {}
+      if (anonymous !== 'true') {
+        credentials = {
+          ORANC_USERNAME: username,
+          ORANC_PASSWORD: password
+        }
+      }
       core.info(`begin coping...`)
       begin = performance.now()
       await exec.exec(
-        'xargs',
-        ['nix', ...commonNixArgs, 'copy', '--to', cacheUrl],
+        `${dataDirectory}/oranc/bin/oranc`,
+        [
+          'push',
+          '--no-closure',
+          '--registry',
+          registry,
+          '--repository',
+          `${repositoryPart1}/${repositoryPart2}`,
+          '--parallel',
+          parallel,
+          '--max-retry',
+          maxRetry,
+          '--zstd-level',
+          zstdLevel
+        ],
         {
           env: {
             ...process.env,
-            AWS_ACCESS_KEY_ID: awsAccessKeyId,
-            AWS_SECRET_ACCESS_KEY: awsSecretAccessKey
+            RUST_LOG: orancLog,
+            ...credentials
           },
           input: Buffer.from(storePaths.join('\n'))
         }
