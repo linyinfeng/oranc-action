@@ -170,6 +170,7 @@ async function upload(): Promise<void> {
       await exec.exec(
         'sudo', // to open nix db
         [
+          '-E', // pass environment variables
           `${dataDirectory}/oranc/bin/oranc`,
           'push',
           '--no-closure',

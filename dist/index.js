@@ -188,6 +188,7 @@ function upload() {
                 begin = performance.now();
                 yield exec.exec('sudo', // to open nix db
                 [
+                    '-E',
                     `${dataDirectory}/oranc/bin/oranc`,
                     'push',
                     '--no-closure',
