@@ -28,6 +28,10 @@ inputs:
   orancUrl:
     required: false
     description: 'docker container name or id of oranc'
+  orancLog:
+    required: true
+    description: 'log string used in pushing'
+    default: 'oranc=info'
   anonymous:
     required: true
     description: 'weather remain anonymous'
@@ -35,7 +39,7 @@ inputs:
   username:
     required: false
     description: 'oci registry username'
-    default: '${{ github.actor }}'
+    default: '$'
   password:
     required: false
     description: 'oci registry password'
@@ -43,6 +47,18 @@ inputs:
   signingKey:
     required: true
     description: 'nix signing key'
+  parallel:
+    required: true
+    description: 'number of workers to do parallel pushing'
+    default: '4'
+  maxRetry:
+    required: true
+    description: 'max retry number of requests'
+    default: '3'
+  zstdLevel:
+    required: true
+    description: 'zstd compression level'
+    default: '3'
 runs:
   using: 'node16'
   main: 'dist/index.js'
