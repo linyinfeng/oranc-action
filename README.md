@@ -1,10 +1,16 @@
 # oranc-action
 
-[oranc](https://github.com/linyinfeng/oranc) as GitHub action! Use an OCI registry (typically, [ghcr.io](https://ghcr.io)) to cache your build.
+[oranc](https://github.com/linyinfeng/oranc) as GitHub action.
+
+Use an OCI registry (typically, [ghcr.io](https://ghcr.io)) to distribute binary caches of your Nix packages.
 
 ## Quick Start
 
-After the first run, the `ghcr.io/{OWNER}/oranc-cache` package will be created (under default configuration). You need to make the package public otherwise caching will not work.
+Install [oranc](https://github.com/linyinfeng/oranc). Run `oranc push --repository "{OWNER}/oranc-cache" initialize`, the `ghcr.io/{OWNER}/oranc-cache` package will be created. You need to make the package public otherwise caching will not work.
+
+The cache can be shared with multiple repositories, you need to add `write` permission for these repositories in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
+
+Then, write your workflow jobs using this action and the `ghcr.io/linyinfeng/oranc` container.
 
 ```yaml
 check:
@@ -34,13 +40,11 @@ check:
         nix build
 ```
 
-The cache can be shared with multiple repositories, you need to add `write` permission for these repositories in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
-
-The cache will also be publicly accessible through `https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache`. Run `nix key convert-secret-to-public` to get the public key from the private signing key. Then use the cache by setting `nix.conf` like this.
+The cache will also be publicly accessible through `https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache`. Use the cache by setting `nix.conf` like this.
 
 ```text
 substituters = https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache
-trusted-public-keys = YOUR_PUBLIC_KEY
+trusted-public-keys = {YOUR_PUBLIC_KEY}
 ```
 
 `oranc.li7g.com` might be slow because of limited machine resources, you can easily self-host an instance according to the README of [oranc](https://github.com/linyinfeng/oranc).
