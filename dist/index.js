@@ -92,10 +92,7 @@ function setup() {
             core.startGroup('oranc: setting up data directory');
             yield io.mkdirP(dataDirectory);
             core.endGroup();
-            core.startGroup('oranc: write singing key');
-            yield fs_1.promises.writeFile(`${dataDirectory}/signing-key`, signingKey);
-            core.endGroup();
-            core.startGroup('oranc: setting up substituters, trusted-public-keys, and key');
+            core.startGroup('oranc: setting up substituters and trusted-public-keys');
             // get public key
             const convertOutput = yield exec.getExecOutput('nix', [...commonNixArgs, 'key', 'convert-secret-to-public'], {
                 input: Buffer.from(signingKey)
@@ -107,7 +104,6 @@ function setup() {
             const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`;
             const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
-extra-secret-key-files = ${dataDirectory}/signing-key
 `;
             yield fs_1.promises.writeFile(`${dataDirectory}/nix.conf`, nixConf);
             yield io.mkdirP(`${xdg.xdgConfig}/nix`);
@@ -123,8 +119,7 @@ extra-secret-key-files = ${dataDirectory}/signing-key
             }
             const currentNixConfig = showConfigOutput.stdout;
             if (!currentNixConfig.includes(substituter) ||
-                !currentNixConfig.includes(publicKey) ||
-                !currentNixConfig.includes(`${dataDirectory}/signing-key`)) {
+                !currentNixConfig.includes(publicKey)) {
                 throw Error('failed to setup substituters and trusted-public-keys');
             }
             core.endGroup();
@@ -203,7 +198,7 @@ function upload() {
                     '--zstd-level',
                     zstdLevel
                 ], {
-                    env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog }), credentials),
+                    env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), credentials),
                     input: Buffer.from(storePaths.join('\n'))
                 });
                 end = performance.now();

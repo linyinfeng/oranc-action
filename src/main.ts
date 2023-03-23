@@ -53,13 +53,7 @@ async function setup(): Promise<void> {
     await io.mkdirP(dataDirectory)
     core.endGroup()
 
-    core.startGroup('oranc: write singing key')
-    await fs.writeFile(`${dataDirectory}/signing-key`, signingKey)
-    core.endGroup()
-
-    core.startGroup(
-      'oranc: setting up substituters, trusted-public-keys, and key'
-    )
+    core.startGroup('oranc: setting up substituters and trusted-public-keys')
     // get public key
     const convertOutput = await exec.getExecOutput(
       'nix',
@@ -75,7 +69,6 @@ async function setup(): Promise<void> {
     const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`
     const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
-extra-secret-key-files = ${dataDirectory}/signing-key
 `
     await fs.writeFile(`${dataDirectory}/nix.conf`, nixConf)
     await io.mkdirP(`${xdg.xdgConfig}/nix`)
@@ -96,8 +89,7 @@ extra-secret-key-files = ${dataDirectory}/signing-key
     const currentNixConfig = showConfigOutput.stdout
     if (
       !currentNixConfig.includes(substituter) ||
-      !currentNixConfig.includes(publicKey) ||
-      !currentNixConfig.includes(`${dataDirectory}/signing-key`)
+      !currentNixConfig.includes(publicKey)
     ) {
       throw Error('failed to setup substituters and trusted-public-keys')
     }
@@ -189,6 +181,7 @@ async function upload(): Promise<void> {
           env: {
             ...process.env,
             RUST_LOG: orancLog,
+            ORANC_SIGNING_KEY: signingKey,
             ...credentials
           },
           input: Buffer.from(storePaths.join('\n'))
