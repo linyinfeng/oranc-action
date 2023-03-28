@@ -13,10 +13,12 @@ const commonNixArgs = ['--experimental-features', 'nix-command flakes']
 const registry = core.getInput('registry')
 const repositoryPart1 = core.getInput('repositoryPart1')
 const repositoryPart2 = core.getInput('repositoryPart2')
-const orancType = core.getInput('orancType')
-const orancContainer = core.getInput('orancContainer')
-const orancUrl = core.getInput('orancUrl')
+const orancServerType = core.getInput('orancServerType')
+const orancServerContainer = core.getInput('orancServerContainer')
+const orancServerUrl = core.getInput('orancServerUrl')
 const orancLog = core.getInput('orancLog')
+const orancCli = core.getInput('orancCli')
+const orancCliExtraArgs = core.getInput('orancCliExtraArgs')
 const anonymous = core.getInput('anonymous')
 const username = core.getInput('username')
 const password = core.getInput('password')
@@ -29,12 +31,12 @@ async function setup(): Promise<void> {
   try {
     core.startGroup('oranc: get oranc instance url')
     let orancUrlFinal
-    if (orancType === 'docker') {
+    if (orancServerType === 'docker') {
       const dockerInspectOutput = await exec.getExecOutput('docker', [
         'inspect',
         '--format',
         '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
-        orancContainer
+        orancServerContainer
       ])
       if (dockerInspectOutput.exitCode !== 0) {
         throw Error('failed to run docker inspect')
@@ -42,10 +44,10 @@ async function setup(): Promise<void> {
       const ip = dockerInspectOutput.stdout.trim()
       orancUrlFinal = `http://${ip}`
       core.setOutput('orancUrl', orancUrlFinal)
-    } else if (orancType === 'url') {
-      orancUrlFinal = orancUrl
+    } else if (orancServerType === 'url') {
+      orancUrlFinal = orancServerUrl
     } else {
-      throw Error(`invalid orancType: '${orancType}'`)
+      throw Error(`invalid orancServerType: '${orancServerType}'`)
     }
     core.endGroup()
 
@@ -99,7 +101,7 @@ extra-trusted-public-keys = ${publicKey}
     await exec.exec('nix', [
       ...commonNixArgs,
       'build',
-      'github:linyinfeng/oranc',
+      orancCli,
       '--out-link',
       `${dataDirectory}/oranc`,
       '--extra-substituters',
@@ -148,51 +150,50 @@ async function upload(): Promise<void> {
     core.info(`took ${end - begin} ms.`)
     core.endGroup()
 
-    if (storePaths.length !== 0) {
-      core.startGroup('oranc: push store paths')
-      let credentials = {}
-      if (anonymous !== 'true') {
-        credentials = {
-          ORANC_USERNAME: username,
-          ORANC_PASSWORD: password
-        }
+    core.startGroup('oranc: push store paths')
+    let credentials = {}
+    if (anonymous !== 'true') {
+      credentials = {
+        ORANC_USERNAME: username,
+        ORANC_PASSWORD: password
       }
-      core.info(`begin coping...`)
-      begin = performance.now()
-      await exec.exec(
-        'sudo', // to open nix db
-        [
-          '-E', // pass environment variables
-          `${dataDirectory}/oranc/bin/oranc`,
-          'push',
-          '--no-closure',
-          '--registry',
-          registry,
-          '--repository',
-          `${repositoryPart1}/${repositoryPart2}`,
-          '--parallel',
-          parallel,
-          '--max-retry',
-          maxRetry,
-          '--zstd-level',
-          zstdLevel
-        ],
-        {
-          env: {
-            ...process.env,
-            RUST_LOG: orancLog,
-            ORANC_SIGNING_KEY: signingKey,
-            ...credentials
-          },
-          input: Buffer.from(storePaths.join('\n'))
-        }
-      )
-      end = performance.now()
-      core.info(`copying took ${end - begin} ms`)
-      core.endGroup()
-    } else {
-      core.info(`skipped, no paths for copying`)
     }
+    const extraArgsEncoded = orancCliExtraArgs.split(' ')
+    const extraArgs = extraArgsEncoded.map(c => decodeURI(c))
+    core.info(`begin coping...`)
+    begin = performance.now()
+    await exec.exec(
+      'sudo', // to open nix db
+      [
+        '-E', // pass environment variables
+        `${dataDirectory}/oranc/bin/oranc`,
+        'push',
+        '--no-closure',
+        '--registry',
+        registry,
+        '--repository',
+        `${repositoryPart1}/${repositoryPart2}`,
+        '--parallel',
+        parallel,
+        '--max-retry',
+        maxRetry,
+        '--zstd-level',
+        zstdLevel,
+        ...extraArgs
+      ],
+      {
+        env: {
+          ...process.env,
+          RUST_LOG: orancLog,
+          ORANC_SIGNING_KEY: signingKey,
+          ...credentials
+        },
+        input: Buffer.from(storePaths.join('\n'))
+      }
+    )
+    end = performance.now()
+    core.info(`copying took ${end - begin} ms`)
+    core.endGroup()
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
