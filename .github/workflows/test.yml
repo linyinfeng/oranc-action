@@ -23,21 +23,29 @@ jobs:
     services:
       oranc:
         image: ghcr.io/linyinfeng/oranc
+        env:
+          EXTRA_ARGS: --no-ssl
       registry:
         image: registry
-        ports:
-          - 5000:5000
     steps:
       - uses: actions/checkout@v3
       - name: Install nix
         uses: cachix/install-nix-action@v20
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-      - uses: ./
+      - name: Get registry ip
+        id: get-registry-ip
+        run: |
+          registry_ip=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' '${{ job.services.registry.id }}')
+          echo "registry-ip=$registry_ip" >> "$GITHUB_OUTPUT"
+      - name: Oranc
+        uses: ./
         with:
           orancServerContainer: ${{ job.services.oranc.id }}
           signingKey: ${{ secrets.NIX_SINGING_KEY }}
-          registry: localhost:5000
+          registry: ${{ steps.get-registry-ip.outputs.registry-ip }}:5000
           orancCliExtraArgs: --no-ssl
-      - run: |
+          initialize: true
+      - name: Build
+        run: |
           nix build --file ./test
