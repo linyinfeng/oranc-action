@@ -66,6 +66,22 @@ inputs:
     required: true
     description: 'zstd compression level'
     default: '3'
+  initialize:
+    required: true
+    description: 'ensure that nix-cache-info file is initialized'
+    default: 'false'
+  forceInitialize:
+    required: true
+    description: 'force initialization'
+    default: 'false'
+  initializePriority:
+    required: true
+    description: 'priority in nix-cache-info'
+    default: '41'
+  initializeMassQuery:
+    required: true
+    description: 'mass query in nix-cache-info'
+    default: 'true'
 runs:
   using: 'node16'
   main: 'dist/index.js'

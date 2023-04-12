@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as io from '@actions/io'
 import {promises as fs} from 'fs'
 import * as xdg from 'xdg-basedir'
+import fetch from 'node-fetch'
 
 export const IsPost = !!process.env['STATE_isPost']
 
@@ -26,6 +27,10 @@ const signingKey = core.getInput('signingKey')
 const parallel = core.getInput('parallel')
 const maxRetry = core.getInput('maxRetry')
 const zstdLevel = core.getInput('zstdLevel')
+const initialize = core.getInput('initialize')
+const forceInitialize = core.getInput('forceInitialize')
+const initializePriority = core.getInput('initializePriority')
+const initializeMassQuery = core.getInput('initializeMassQuery')
 
 async function setup(): Promise<void> {
   try {
@@ -118,6 +123,58 @@ extra-trusted-public-keys = ${publicKey}
       JSON.stringify(allStorePaths)
     )
     core.endGroup()
+
+    if (initialize === 'true') {
+      core.startGroup('oranc: initialize nix-cache-info')
+      let doInitialize = false
+      if (forceInitialize === 'true') {
+        doInitialize = true
+      } else {
+        const result = await fetch(`${substituter}/nix-cache-info`)
+        if (result.status === 200) {
+          doInitialize = false
+        } else if (result.status === 404) {
+          doInitialize = true
+        } else {
+          throw Error(
+            `failed to fetch nix-cache-info: ${result.status} ${result.statusText} ${result.body}`
+          )
+        }
+      }
+      if (doInitialize) {
+        const credentials = get_credentials()
+        const extraArgs = get_oranc_extra_args()
+        const initializeArgs = ['--priority', initializePriority]
+        if (initializeMassQuery !== 'true') {
+          initializeArgs.push('--no-mass-query')
+        }
+        await exec.exec(
+          'sudo', // to open nix db
+          [
+            '-E', // pass environment variables
+            `${dataDirectory}/oranc/bin/oranc`,
+            'push',
+            '--registry',
+            registry,
+            '--repository',
+            `${repositoryPart1}/${repositoryPart2}`,
+            '--max-retry',
+            maxRetry,
+            ...extraArgs,
+            'initialize',
+            ...initializeArgs
+          ],
+          {
+            env: {
+              ...process.env,
+              RUST_LOG: orancLog,
+              ORANC_SIGNING_KEY: signingKey,
+              ...credentials
+            }
+          }
+        )
+      }
+    }
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
@@ -151,15 +208,8 @@ async function upload(): Promise<void> {
     core.endGroup()
 
     core.startGroup('oranc: push store paths')
-    let credentials = {}
-    if (anonymous !== 'true') {
-      credentials = {
-        ORANC_USERNAME: username,
-        ORANC_PASSWORD: password
-      }
-    }
-    const extraArgsEncoded = orancCliExtraArgs.split(' ')
-    const extraArgs = extraArgsEncoded.map(c => decodeURI(c))
+    const credentials = get_credentials()
+    const extraArgs = get_oranc_extra_args()
     core.info(`begin coping...`)
     begin = performance.now()
     await exec.exec(
@@ -212,6 +262,23 @@ async function all_store_paths(): Promise<string[]> {
   // excludes all `.drv` store paths
   // it is safe to do so because derivation names are not allowed to end in '.drv'
   return pathInfos.filter(p => !p.endsWith('.drv'))
+}
+
+function get_credentials(): {[key: string]: string} {
+  let credentials = {}
+  if (anonymous !== 'true') {
+    credentials = {
+      ORANC_USERNAME: username,
+      ORANC_PASSWORD: password
+    }
+  }
+  return credentials
+}
+
+function get_oranc_extra_args(): string[] {
+  const extraArgsEncoded = orancCliExtraArgs.split(' ')
+  const extraArgs = extraArgsEncoded.map(c => decodeURI(c))
+  return extraArgs
 }
 
 if (!IsPost) {
