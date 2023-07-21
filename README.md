@@ -4,6 +4,11 @@
 
 Use an OCI registry (typically, [ghcr.io](https://ghcr.io)) to distribute binary caches of your Nix packages.
 
+## Warning
+
+Tags, image manifests, and layers created by oranc are so different from other typical OCI repositories.
+So I don't know if it is an abuse of OCI registries. Pushing to [ghcr.io](https://ghcr.io) may violate the terms of service of GitHub.
+
 ## Quick Start
 
 Install [oranc](https://github.com/linyinfeng/oranc). Run `oranc push --repository "{OWNER}/oranc-cache" initialize`, the `ghcr.io/{OWNER}/oranc-cache` package will be created. You need to make the package public otherwise caching will not work.
