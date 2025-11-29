@@ -15,7 +15,7 @@ So I don't know if it is an abuse of OCI registries. Pushing to [ghcr.io](https:
 2. Run the following code to create the `ghcr.io/{OWNER}/oranc-cache` package.
 
    ```bash
-   export ORANC_USERNAME="{GITHUB_USERNAME}"
+   export ORANC_USERNAME="-"
    export ORANC_PASSWORD="{GITHUB_TOKEN}"
    oranc push --repository "{GITHUB_USERNAME}/oranc-cache" initialize
    ```
