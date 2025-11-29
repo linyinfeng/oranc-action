@@ -46,7 +46,7 @@ inputs:
   username:
     required: false
     description: 'oci registry username'
-    default: '$'
+    default: 'x-access-token'
   password:
     required: false
     description: 'oci registry password'
