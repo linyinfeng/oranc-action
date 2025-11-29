@@ -6,6 +6,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
+/* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -244,15 +245,16 @@ function all_store_paths() {
         const pathInfoOutput = yield (0, exec_1.getExecOutput)('nix', [
             ...commonNixArgs,
             'path-info',
-            '--all'
+            '--all',
+            '--json'
         ]);
         if (pathInfoOutput.exitCode !== 0) {
-            throw Error('failed to run nix path-info --all');
+            throw Error('failed to run nix path-info --all --json');
         }
-        const pathInfos = pathInfoOutput.stdout.trim().split('\n');
-        // excludes all `.drv` store paths
-        // it is safe to do so because derivation names are not allowed to end in '.drv'
-        return pathInfos.filter(p => !p.endsWith('.drv'));
+        const pathInfo = JSON.parse(pathInfoOutput.stdout);
+        // only cache paths built from some derivation
+        const filtered = Object.fromEntries(Object.entries(pathInfo).filter(([_path, i]) => i.deriver !== null));
+        return Object.keys(filtered);
     });
 }
 function get_credentials() {
