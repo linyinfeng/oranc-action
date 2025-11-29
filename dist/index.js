@@ -6,39 +6,6 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -53,43 +20,43 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.IsPost = void 0;
-const core = __importStar(__nccwpck_require__(6966));
-const exec = __importStar(__nccwpck_require__(2851));
-const io = __importStar(__nccwpck_require__(6893));
+const core_1 = __nccwpck_require__(6966);
+const exec_1 = __nccwpck_require__(2851);
+const io_1 = __nccwpck_require__(6893);
 const fs_1 = __nccwpck_require__(9896);
-const xdg = __importStar(__nccwpck_require__(4108));
+const xdg_basedir_1 = __nccwpck_require__(4108);
 const node_fetch_1 = __importDefault(__nccwpck_require__(696));
 exports.IsPost = !!process.env['STATE_isPost'];
 const dataDirectory = '/tmp/oranc-action';
 const commonNixArgs = ['--experimental-features', 'nix-command flakes'];
 // check upstream substituters first cleaner log
-const registry = core.getInput('registry');
-const repositoryPart1 = core.getInput('repositoryPart1');
-const repositoryPart2 = core.getInput('repositoryPart2');
-const orancServerType = core.getInput('orancServerType');
-const orancServerContainer = core.getInput('orancServerContainer');
-const orancServerUrl = core.getInput('orancServerUrl');
-const orancLog = core.getInput('orancLog');
-const orancCli = core.getInput('orancCli');
-const orancCliExtraArgs = core.getInput('orancCliExtraArgs');
-const anonymous = core.getInput('anonymous');
-const username = core.getInput('username');
-const password = core.getInput('password');
-const signingKey = core.getInput('signingKey');
-const parallel = core.getInput('parallel');
-const maxRetry = core.getInput('maxRetry');
-const zstdLevel = core.getInput('zstdLevel');
-const initialize = core.getInput('initialize');
-const forceInitialize = core.getInput('forceInitialize');
-const initializePriority = core.getInput('initializePriority');
-const initializeMassQuery = core.getInput('initializeMassQuery');
+const registry = (0, core_1.getInput)('registry');
+const repositoryPart1 = (0, core_1.getInput)('repositoryPart1');
+const repositoryPart2 = (0, core_1.getInput)('repositoryPart2');
+const orancServerType = (0, core_1.getInput)('orancServerType');
+const orancServerContainer = (0, core_1.getInput)('orancServerContainer');
+const orancServerUrl = (0, core_1.getInput)('orancServerUrl');
+const orancLog = (0, core_1.getInput)('orancLog');
+const orancCli = (0, core_1.getInput)('orancCli');
+const orancCliExtraArgs = (0, core_1.getInput)('orancCliExtraArgs');
+const anonymous = (0, core_1.getInput)('anonymous');
+const username = (0, core_1.getInput)('username');
+const password = (0, core_1.getInput)('password');
+const signingKey = (0, core_1.getInput)('signingKey');
+const parallel = (0, core_1.getInput)('parallel');
+const maxRetry = (0, core_1.getInput)('maxRetry');
+const zstdLevel = (0, core_1.getInput)('zstdLevel');
+const initialize = (0, core_1.getInput)('initialize');
+const forceInitialize = (0, core_1.getInput)('forceInitialize');
+const initializePriority = (0, core_1.getInput)('initializePriority');
+const initializeMassQuery = (0, core_1.getInput)('initializeMassQuery');
 function setup() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.startGroup('oranc: get oranc instance url');
+            (0, core_1.startGroup)('oranc: get oranc instance url');
             let orancUrlFinal;
             if (orancServerType === 'docker') {
-                const dockerInspectOutput = yield exec.getExecOutput('docker', [
+                const dockerInspectOutput = yield (0, exec_1.getExecOutput)('docker', [
                     'inspect',
                     '--format',
                     '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
@@ -100,7 +67,6 @@ function setup() {
                 }
                 const ip = dockerInspectOutput.stdout.trim();
                 orancUrlFinal = `http://${ip}`;
-                core.setOutput('orancUrl', orancUrlFinal);
             }
             else if (orancServerType === 'url') {
                 orancUrlFinal = orancServerUrl;
@@ -108,13 +74,14 @@ function setup() {
             else {
                 throw Error(`invalid orancServerType: '${orancServerType}'`);
             }
-            core.endGroup();
-            core.startGroup('oranc: setting up data directory');
-            yield io.mkdirP(dataDirectory);
-            core.endGroup();
-            core.startGroup('oranc: setting up substituters and trusted-public-keys');
+            (0, core_1.setOutput)('oranc-url', orancUrlFinal);
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: setting up data directory');
+            yield (0, io_1.mkdirP)(dataDirectory);
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: setting up substituters and trusted-public-keys');
             // get public key
-            const convertOutput = yield exec.getExecOutput('nix', [...commonNixArgs, 'key', 'convert-secret-to-public'], {
+            const convertOutput = yield (0, exec_1.getExecOutput)('nix', [...commonNixArgs, 'key', 'convert-secret-to-public'], {
                 input: Buffer.from(signingKey)
             });
             if (convertOutput.exitCode !== 0) {
@@ -122,15 +89,17 @@ function setup() {
             }
             const publicKey = convertOutput.stdout;
             const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`;
+            (0, core_1.setOutput)('substituter', substituter);
+            (0, core_1.setOutput)('public-key', publicKey);
             const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
 `;
             yield fs_1.promises.writeFile(`${dataDirectory}/nix.conf`, nixConf);
-            yield io.mkdirP(`${xdg.xdgConfig}/nix`);
-            yield fs_1.promises.appendFile(`${xdg.xdgConfig}/nix/nix.conf`, `\n# oranc\ninclude ${dataDirectory}/nix.conf\n`);
-            core.endGroup();
-            core.startGroup('oranc: check nix configurations');
-            const showConfigOutput = yield exec.getExecOutput('nix', [
+            yield (0, io_1.mkdirP)(`${xdg_basedir_1.xdgConfig}/nix`);
+            yield fs_1.promises.appendFile(`${xdg_basedir_1.xdgConfig}/nix/nix.conf`, `\n# oranc\ninclude ${dataDirectory}/nix.conf\n`);
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: check nix configurations');
+            const showConfigOutput = yield (0, exec_1.getExecOutput)('nix', [
                 ...commonNixArgs,
                 'show-config'
             ]);
@@ -142,9 +111,9 @@ extra-trusted-public-keys = ${publicKey}
                 !currentNixConfig.includes(publicKey)) {
                 throw Error('failed to setup substituters and trusted-public-keys');
             }
-            core.endGroup();
-            core.startGroup('oranc: install oranc');
-            yield exec.exec('nix', [
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: install oranc');
+            yield (0, exec_1.exec)('nix', [
                 ...commonNixArgs,
                 'build',
                 orancCli,
@@ -155,13 +124,13 @@ extra-trusted-public-keys = ${publicKey}
                 '--extra-trusted-public-keys',
                 'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
             ]);
-            core.endGroup();
-            core.startGroup('oranc: record store-paths-pre-build');
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: record store-paths-pre-build');
             const allStorePaths = yield all_store_paths();
             yield fs_1.promises.writeFile(`${dataDirectory}/store-paths-pre-build`, JSON.stringify(allStorePaths));
-            core.endGroup();
+            (0, core_1.endGroup)();
             if (initialize === 'true') {
-                core.startGroup('oranc: initialize nix-cache-info');
+                (0, core_1.startGroup)('oranc: initialize nix-cache-info');
                 let doInitialize = false;
                 if (forceInitialize === 'true') {
                     doInitialize = true;
@@ -185,7 +154,7 @@ extra-trusted-public-keys = ${publicKey}
                     if (initializeMassQuery !== 'true') {
                         initializeArgs.push('--no-mass-query');
                     }
-                    yield exec.exec('sudo', // to open nix db
+                    yield (0, exec_1.exec)('sudo', // to open nix db
                     [
                         '-E', // pass environment variables
                         `${dataDirectory}/oranc/bin/oranc`,
@@ -207,39 +176,39 @@ extra-trusted-public-keys = ${publicKey}
         }
         catch (error) {
             if (error instanceof Error)
-                core.setFailed(error.message);
+                (0, core_1.setFailed)(error.message);
         }
     });
 }
 function upload() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core.startGroup('oranc: get store-paths-pre-build');
+            (0, core_1.startGroup)('oranc: get store-paths-pre-build');
             const storePathsPreBuildContent = yield fs_1.promises.readFile(`${dataDirectory}/store-paths-pre-build`);
             const storePathsPreBuild = JSON.parse(storePathsPreBuildContent.toString());
             if (!Array.isArray(storePathsPreBuild)) {
                 throw Error('invalid store-paths-pre-build file');
             }
             const storePathsPreBuildSet = new Set(storePathsPreBuild);
-            core.endGroup();
-            core.startGroup('oranc: get store paths to push');
-            core.info(`begin getting all store paths...`);
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: get store paths to push');
+            (0, core_1.info)(`begin getting all store paths...`);
             let begin = performance.now();
             const AllStorePaths = yield all_store_paths();
             let end = performance.now();
-            core.info(`took ${end - begin} ms.`);
-            core.info(`begin calculating paths for pushing...`);
+            (0, core_1.info)(`took ${end - begin} ms.`);
+            (0, core_1.info)(`begin calculating paths for pushing...`);
             begin = performance.now();
             const storePaths = AllStorePaths.filter(p => !storePathsPreBuildSet.has(p));
             end = performance.now();
-            core.info(`took ${end - begin} ms.`);
-            core.endGroup();
-            core.startGroup('oranc: push store paths');
+            (0, core_1.info)(`took ${end - begin} ms.`);
+            (0, core_1.endGroup)();
+            (0, core_1.startGroup)('oranc: push store paths');
             const credentials = get_credentials();
             const extraArgs = get_oranc_extra_args();
-            core.info(`begin coping...`);
+            (0, core_1.info)(`begin coping...`);
             begin = performance.now();
-            yield exec.exec('sudo', // to open nix db
+            yield (0, exec_1.exec)('sudo', // to open nix db
             [
                 '-E', // pass environment variables
                 `${dataDirectory}/oranc/bin/oranc`,
@@ -261,18 +230,18 @@ function upload() {
                 input: Buffer.from(storePaths.join('\n'))
             });
             end = performance.now();
-            core.info(`copying took ${end - begin} ms`);
-            core.endGroup();
+            (0, core_1.info)(`copying took ${end - begin} ms`);
+            (0, core_1.endGroup)();
         }
         catch (error) {
             if (error instanceof Error)
-                core.setFailed(error.message);
+                (0, core_1.setFailed)(error.message);
         }
     });
 }
 function all_store_paths() {
     return __awaiter(this, void 0, void 0, function* () {
-        const pathInfoOutput = yield exec.getExecOutput('nix', [
+        const pathInfoOutput = yield (0, exec_1.getExecOutput)('nix', [
             ...commonNixArgs,
             'path-info',
             '--all'
@@ -304,7 +273,7 @@ function get_oranc_extra_args() {
 if (!exports.IsPost) {
     // Publish a variable so that when the POST action runs, it can determine it should run the cleanup logic.
     // This is necessary since we don't have a separate entry point.
-    core.saveState('isPost', 'true');
+    (0, core_1.saveState)('isPost', 'true');
     setup();
 }
 else {
