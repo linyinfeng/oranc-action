@@ -11,8 +11,7 @@ So I don't know if it is an abuse of OCI registries. Pushing to [ghcr.io](https:
 
 ## Quick Start
 
-1. Install [oranc](https://github.com/linyinfeng/oranc).
-2. Run the following code to create the `ghcr.io/{OWNER}/oranc-cache` package.
+1. Install [oranc](https://github.com/linyinfeng/oranc). Run the following code to create the `ghcr.io/{OWNER}/oranc-cache` package.
 
    ```bash
    export ORANC_USERNAME="-"
@@ -20,9 +19,9 @@ So I don't know if it is an abuse of OCI registries. Pushing to [ghcr.io](https:
    oranc push --repository "{GITHUB_USERNAME}/oranc-cache" initialize
    ```
 
-3. Manually **make the package public** in settings, otherwise caching will not work.
+2. Manually **make the package public** in settings, otherwise caching will not work.
 
-   The cache can be shared with multiple repositories, you need to add `write` permission for these repositories to use the cache in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
+3. The cache can be shared with multiple repositories, you need to manually **add `write` permission** for these repositories in Packages - oranc-cache - Packages settings - Manage Actions access - Add Repository.
 
 4. Write your workflow jobs with this action and the `ghcr.io/linyinfeng/oranc` container.
 
