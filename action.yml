@@ -28,9 +28,17 @@ inputs:
   orancServerUrl:
     required: false
     description: 'docker container name or id of oranc'
-  orancCli:
+  orancCliTarball:
     required: true
-    description: 'oranc CLI package to use'
+    description: 'oranc CLI package (non-flake) to use'
+    default: 'https://github.com/linyinfeng/oranc/archive/refs/heads/main.tar.gz'
+  orancCliFromFlake:
+    required: true
+    description: 'install oranc cli from flake or not'
+    default: 'false'
+  orancCliFlake:
+    required: true
+    description: 'oranc CLI package (flake) to use'
     default: 'github:linyinfeng/oranc'
   orancLog:
     required: true

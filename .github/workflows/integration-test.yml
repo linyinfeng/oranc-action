@@ -57,7 +57,7 @@ jobs:
         uses: ./
         with:
           orancServerContainer: ${{ job.services.oranc.id }}
-          orancCli: github:linyinfeng/oranc/${{ matrix.oranc-version }}
+          orancCliTarball: https://github.com/linyinfeng/oranc/archive/refs/heads/${{ matrix.oranc-version }}.tar.gz
           signingKey: ${{ steps.generate-key.outputs.signing-key }}
           registry: ${{ steps.get-registry-ip.outputs.registry-ip }}:5000
           orancCliExtraArgs: --no-ssl

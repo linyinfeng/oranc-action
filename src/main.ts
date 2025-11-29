@@ -28,7 +28,9 @@ const orancServerType = getInput('orancServerType')
 const orancServerContainer = getInput('orancServerContainer')
 const orancServerUrl = getInput('orancServerUrl')
 const orancLog = getInput('orancLog')
-const orancCli = getInput('orancCli')
+const orancCliTarball = getInput('orancCliTarball')
+const orancCliFromFlake = getInput('orancCliFromFlake')
+const orancCliFlake = getInput('orancCliFlake')
 const orancCliExtraArgs = getInput('orancCliExtraArgs')
 const anonymous = getInput('anonymous')
 const username = getInput('username')
@@ -115,17 +117,30 @@ extra-trusted-public-keys = ${publicKey}
     endGroup()
 
     startGroup('oranc: install oranc')
-    await exec('nix', [
-      ...commonNixArgs,
-      'build',
-      orancCli,
+    const orancInstallArgs = [
       '--out-link',
       `${dataDirectory}/oranc`,
       '--extra-substituters',
       `https://linyinfeng.cachix.org`,
       '--extra-trusted-public-keys',
       'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
-    ])
+    ]
+    if (orancCliFromFlake === 'true') {
+      await exec('nix', [
+        ...commonNixArgs,
+        'build',
+        orancCliFlake,
+        ...orancInstallArgs
+      ])
+    } else {
+      await exec('nix', [
+        ...commonNixArgs,
+        'build',
+        '--file',
+        orancCliTarball,
+        ...orancInstallArgs
+      ])
+    }
     endGroup()
 
     startGroup('oranc: record store-paths-pre-build')

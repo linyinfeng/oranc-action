@@ -38,7 +38,9 @@ const orancServerType = (0, core_1.getInput)('orancServerType');
 const orancServerContainer = (0, core_1.getInput)('orancServerContainer');
 const orancServerUrl = (0, core_1.getInput)('orancServerUrl');
 const orancLog = (0, core_1.getInput)('orancLog');
-const orancCli = (0, core_1.getInput)('orancCli');
+const orancCliTarball = (0, core_1.getInput)('orancCliTarball');
+const orancCliFromFlake = (0, core_1.getInput)('orancCliFromFlake');
+const orancCliFlake = (0, core_1.getInput)('orancCliFlake');
 const orancCliExtraArgs = (0, core_1.getInput)('orancCliExtraArgs');
 const anonymous = (0, core_1.getInput)('anonymous');
 const username = (0, core_1.getInput)('username');
@@ -114,17 +116,31 @@ extra-trusted-public-keys = ${publicKey}
             }
             (0, core_1.endGroup)();
             (0, core_1.startGroup)('oranc: install oranc');
-            yield (0, exec_1.exec)('nix', [
-                ...commonNixArgs,
-                'build',
-                orancCli,
+            const orancInstallArgs = [
                 '--out-link',
                 `${dataDirectory}/oranc`,
                 '--extra-substituters',
                 `https://linyinfeng.cachix.org`,
                 '--extra-trusted-public-keys',
                 'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
-            ]);
+            ];
+            if (orancCliFromFlake === 'true') {
+                yield (0, exec_1.exec)('nix', [
+                    ...commonNixArgs,
+                    'build',
+                    orancCliFlake,
+                    ...orancInstallArgs
+                ]);
+            }
+            else {
+                yield (0, exec_1.exec)('nix', [
+                    ...commonNixArgs,
+                    'build',
+                    '--file',
+                    orancCliTarball,
+                    ...orancInstallArgs
+                ]);
+            }
             (0, core_1.endGroup)();
             (0, core_1.startGroup)('oranc: record store-paths-pre-build');
             const allStorePaths = yield all_store_paths();
