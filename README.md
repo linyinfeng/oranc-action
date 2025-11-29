@@ -11,39 +11,48 @@ So I don't know if it is an abuse of OCI registries. Pushing to [ghcr.io](https:
 
 ## Quick Start
 
-Install [oranc](https://github.com/linyinfeng/oranc). Run `oranc push --repository "{OWNER}/oranc-cache" initialize`, the `ghcr.io/{OWNER}/oranc-cache` package will be created. You need to make the package public otherwise caching will not work.
+1. Install [oranc](https://github.com/linyinfeng/oranc).
+2. Run the following code to create the `ghcr.io/{OWNER}/oranc-cache` package.
 
-The cache can be shared with multiple repositories, you need to add `write` permission for these repositories in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
+   ```bash
+   export ORANC_USERNAME="{GITHUB_USERNAME}"
+   export ORANC_PASSWORD="{GITHUB_TOKEN}"
+   oranc push --repository "{GITHUB_USERNAME}/oranc-cache" initialize
+   ```
 
-Then, write your workflow jobs using this action and the `ghcr.io/linyinfeng/oranc` container.
+3. Manually **make the package public** in settings, otherwise caching will not work.
 
-```yaml
-check:
-  runs-on: ubuntu-latest
-  permissions:
-    contents: read
-    # need write permission to write to ghcr registry
-    packages: write
-  # setup an oranc service container
-  # default configuration use https://cache.nixos.org as upstream
-  services:
-    oranc:
-      image: ghcr.io/linyinfeng/oranc
-  steps:
-    - uses: actions/checkout@v3
-    - name: Install nix
-      uses: cachix/install-nix-action@v20
-    - uses: linyinfeng/oranc-action@v1
-      with:
-        # pass oranc container id to the action
-        orancServerContainer: '${{ job.services.oranc.id }}'
-        # use `nix key generate-secret` to generate a signing key
-        # keep it safe!
-        signingKey: ${{ secrets.NIX_SINGING_KEY }}
-    # build anything with cache
-    - run: |
-        nix build
-```
+   The cache can be shared with multiple repositories, you need to add `write` permission for these repositories to use the cache in "https://github.com/users/{OWNER}/packages/container/oranc-cache/settings".
+
+4. Write your workflow jobs with this action and the `ghcr.io/linyinfeng/oranc` container.
+
+   ```yaml
+   check:
+     runs-on: ubuntu-latest
+     permissions:
+       contents: read
+       # need write permission to write to ghcr registry
+       packages: write
+     # setup an oranc service container
+     # default configuration use https://cache.nixos.org as upstream
+     services:
+       oranc:
+         image: ghcr.io/linyinfeng/oranc
+     steps:
+       - uses: actions/checkout@v3
+       - name: Install nix
+         uses: cachix/install-nix-action@v20
+       - uses: linyinfeng/oranc-action@v1
+         with:
+           # pass oranc container id to the action
+           orancServerContainer: '${{ job.services.oranc.id }}'
+           # use `nix key generate-secret` to generate a signing key
+           # keep it safe!
+           signingKey: ${{ secrets.NIX_SINGING_KEY }}
+       # build anything with cache
+       - run: |
+           nix build
+   ```
 
 The cache will also be publicly accessible through `https://oranc.li7g.com/ghcr.io/{OWNER}/oranc-cache`. Use the cache by setting `nix.conf` like this.
 
