@@ -266,6 +266,9 @@ function get_credentials() {
     return credentials;
 }
 function get_oranc_extra_args() {
+    if (orancCliExtraArgs === '') {
+        return [];
+    }
     const extraArgsEncoded = orancCliExtraArgs.split(' ');
     const extraArgs = extraArgsEncoded.map(c => decodeURI(c));
     return extraArgs;

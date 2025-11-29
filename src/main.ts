@@ -286,6 +286,9 @@ function get_credentials(): {[key: string]: string} {
 }
 
 function get_oranc_extra_args(): string[] {
+  if (orancCliExtraArgs === '') {
+    return []
+  }
   const extraArgsEncoded = orancCliExtraArgs.split(' ')
   const extraArgs = extraArgsEncoded.map(c => decodeURI(c))
   return extraArgs
