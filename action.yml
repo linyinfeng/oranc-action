@@ -83,7 +83,7 @@ inputs:
     description: 'mass query in nix-cache-info'
     default: 'true'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
   # same entry point for simplicity
   post: 'dist/index.js'
