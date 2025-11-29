@@ -1,3 +1,5 @@
+/* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
+
 import {
   getInput,
   startGroup,
@@ -259,19 +261,30 @@ async function upload(): Promise<void> {
   }
 }
 
+interface NixPathInfo {
+  deriver: string | null
+}
+
+interface NixPathInfoDict {
+  [path: string]: NixPathInfo
+}
+
 async function all_store_paths(): Promise<string[]> {
   const pathInfoOutput = await getExecOutput('nix', [
     ...commonNixArgs,
     'path-info',
-    '--all'
+    '--all',
+    '--json'
   ])
   if (pathInfoOutput.exitCode !== 0) {
-    throw Error('failed to run nix path-info --all')
+    throw Error('failed to run nix path-info --all --json')
   }
-  const pathInfos = pathInfoOutput.stdout.trim().split('\n')
-  // excludes all `.drv` store paths
-  // it is safe to do so because derivation names are not allowed to end in '.drv'
-  return pathInfos.filter(p => !p.endsWith('.drv'))
+  const pathInfo = JSON.parse(pathInfoOutput.stdout) as NixPathInfoDict
+  // only cache paths built from some derivation
+  const filtered = Object.fromEntries(
+    Object.entries(pathInfo).filter(([_path, i]) => i.deriver !== null)
+  )
+  return Object.keys(filtered)
 }
 
 function get_credentials(): {[key: string]: string} {

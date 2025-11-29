@@ -14,6 +14,9 @@ export default ts.config(
     languageOptions: {
       parser: tsParser,
     },
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    },
   },
   { ignores: ['dist/', 'lib/', 'node_modules/'] },
   prettierRecommended,
