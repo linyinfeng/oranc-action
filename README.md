@@ -36,7 +36,7 @@ check:
     - uses: linyinfeng/oranc-action@v1
       with:
         # pass oranc container id to the action
-        orancContainer: '${{ job.services.oranc.id }}'
+        orancServerContainer: '${{ job.services.oranc.id }}'
         # use `nix key generate-secret` to generate a signing key
         # keep it safe!
         signingKey: ${{ secrets.NIX_SINGING_KEY }}
