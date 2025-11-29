@@ -26,7 +26,8 @@ jobs:
       registry:
         image: registry
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Install nix
         uses: cachix/install-nix-action@v20
         with:
@@ -36,6 +37,9 @@ jobs:
         run: |
           registry_ip=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' '${{ job.services.registry.id }}')
           echo "registry-ip=$registry_ip" >> "$GITHUB_OUTPUT"
+      - name: Generate signing key
+        id: generate-key
+        run: echo "signing-key=$(nix key generate-secret --key-name "oranc-test")" >> "$GITHUB_OUTPUT"
       - name: Verify
         uses: gacts/run-and-post-run@v1
         with:
@@ -47,13 +51,14 @@ jobs:
             nix store verify \
               --file ./test \
               --store "$substituter_url" \
-              --eval-store auto
+              --eval-store auto \
+              --sigs-needed 1
       - name: Oranc
         uses: ./
         with:
           orancServerContainer: ${{ job.services.oranc.id }}
           orancCli: github:linyinfeng/oranc/${{ matrix.oranc-version }}
-          signingKey: ${{ secrets.NIX_SINGING_KEY }}
+          signingKey: ${{ steps.generate-key.outputs.signing-key }}
           registry: ${{ steps.get-registry-ip.outputs.registry-ip }}:5000
           orancCliExtraArgs: --no-ssl
           initialize: true
