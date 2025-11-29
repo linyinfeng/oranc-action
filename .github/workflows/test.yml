@@ -1,4 +1,4 @@
-name: 'build-test'
+name: 'test'
 on: # rebuild any PRs and main branch changes
   pull_request:
   push:
@@ -7,22 +7,20 @@ on: # rebuild any PRs and main branch changes
       - 'releases/*'
 
 jobs:
-  build: # make sure build/ci work properly
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
-        with:
-          version: '*'
-      - run: |
-          pnpm install
-      - run: |
-          pnpm run all
   test: # make sure the action works on a clean machine without building
+    strategy:
+      fail-fast: true
+      matrix:
+        oranc-version: [main]
+        experimental: [false]
+        include:
+        - oranc-version: develop
+          experimental: true
+    continue-on-error: ${{ matrix.experimental }}
     runs-on: ubuntu-latest
     services:
       oranc:
-        image: ghcr.io/linyinfeng/oranc
+        image: ghcr.io/linyinfeng/oranc:${{ matrix.oranc-version }}
         env:
           EXTRA_ARGS: --no-ssl
       registry:
@@ -38,10 +36,23 @@ jobs:
         run: |
           registry_ip=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' '${{ job.services.registry.id }}')
           echo "registry-ip=$registry_ip" >> "$GITHUB_OUTPUT"
+      - name: Verify
+        uses: gacts/run-and-post-run@v1
+        with:
+          run: echo "do nothing, post action run after oranc's post action"
+          post: |
+            oranc_server_ip=$(docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' '${{ job.services.oranc.id }}') ; \
+            substituter_url="http://$oranc_server_ip/${{ steps.get-registry-ip.outputs.registry-ip }}:5000/${{ github.repository_owner }}/oranc-cache" ; \
+            echo "substituter url = $substituter_url" ; \
+            nix store verify \
+              --file ./test \
+              --store "$substituter_url" \
+              --eval-store auto
       - name: Oranc
         uses: ./
         with:
           orancServerContainer: ${{ job.services.oranc.id }}
+          orancCli: github:linyinfeng/oranc/${{ matrix.oranc-version }}
           signingKey: ${{ secrets.NIX_SINGING_KEY }}
           registry: ${{ steps.get-registry-ip.outputs.registry-ip }}:5000
           orancCliExtraArgs: --no-ssl
