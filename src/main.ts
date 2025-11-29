@@ -56,12 +56,12 @@ async function setup(): Promise<void> {
       }
       const ip = dockerInspectOutput.stdout.trim()
       orancUrlFinal = `http://${ip}`
-      setOutput('orancUrl', orancUrlFinal)
     } else if (orancServerType === 'url') {
       orancUrlFinal = orancServerUrl
     } else {
       throw Error(`invalid orancServerType: '${orancServerType}'`)
     }
+    setOutput('oranc-url', orancUrlFinal)
     endGroup()
 
     startGroup('oranc: setting up data directory')
@@ -82,6 +82,8 @@ async function setup(): Promise<void> {
     }
     const publicKey = convertOutput.stdout
     const substituter = `${orancUrlFinal}/${registry}/${repositoryPart1}/${repositoryPart2}`
+    setOutput('substituter', substituter)
+    setOutput('public-key', publicKey)
     const nixConf = `extra-substituters = ${substituter}
 extra-trusted-public-keys = ${publicKey}
 `
