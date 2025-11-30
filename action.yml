@@ -32,6 +32,14 @@ inputs:
     required: true
     description: 'oranc CLI package to use'
     default: 'github:linyinfeng/oranc'
+  orancCliSubstituters:
+    required: false
+    description: |
+      substituters to download oranc CLI.
+  orancCliPublicKey:
+    required: true
+    description: 'public key of oranc CLI'
+    default: 'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM= oranc-linyinfeng-1:rNZCqhG6QTAImDxPI5ydlG5EhLxrwBb11fgpt5zYkVY='
   orancLog:
     required: true
     description: 'log string used in pushing'

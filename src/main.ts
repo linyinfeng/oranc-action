@@ -29,6 +29,8 @@ const orancServerContainer = getInput('orancServerContainer')
 const orancServerUrl = getInput('orancServerUrl')
 const orancLog = getInput('orancLog')
 const orancCli = getInput('orancCli')
+const orancCliSubstituters = getInput('orancCliSubstituters')
+const orancCliPublicKey = getInput('orancCliPublicKey')
 const orancCliExtraArgs = getInput('orancCliExtraArgs')
 const anonymous = getInput('anonymous')
 const username = getInput('username')
@@ -115,6 +117,14 @@ extra-trusted-public-keys = ${publicKey}
     endGroup()
 
     startGroup('oranc: install oranc')
+    let cliSubstituters = orancCliSubstituters
+    if (cliSubstituters === null) {
+      if (registry === 'ghcr.io') {
+        cliSubstituters = `${orancUrlFinal}/ghcr.io/linyinfeng/oranc-cache`
+      }
+      cliSubstituters += ' '
+      cliSubstituters += 'https://linyinfeng.cachix.org'
+    }
     await exec('nix', [
       ...commonNixArgs,
       'build',
@@ -122,9 +132,9 @@ extra-trusted-public-keys = ${publicKey}
       '--out-link',
       `${dataDirectory}/oranc`,
       '--extra-substituters',
-      `https://linyinfeng.cachix.org`,
+      cliSubstituters,
       '--extra-trusted-public-keys',
-      'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
+      orancCliPublicKey
     ])
     endGroup()
 

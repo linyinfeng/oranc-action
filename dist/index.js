@@ -39,6 +39,8 @@ const orancServerContainer = (0, core_1.getInput)('orancServerContainer');
 const orancServerUrl = (0, core_1.getInput)('orancServerUrl');
 const orancLog = (0, core_1.getInput)('orancLog');
 const orancCli = (0, core_1.getInput)('orancCli');
+const orancCliSubstituters = (0, core_1.getInput)('orancCliSubstituters');
+const orancCliPublicKey = (0, core_1.getInput)('orancCliPublicKey');
 const orancCliExtraArgs = (0, core_1.getInput)('orancCliExtraArgs');
 const anonymous = (0, core_1.getInput)('anonymous');
 const username = (0, core_1.getInput)('username');
@@ -114,6 +116,14 @@ extra-trusted-public-keys = ${publicKey}
             }
             (0, core_1.endGroup)();
             (0, core_1.startGroup)('oranc: install oranc');
+            let cliSubstituters = orancCliSubstituters;
+            if (cliSubstituters === null) {
+                if (registry === 'ghcr.io') {
+                    cliSubstituters = `${orancUrlFinal}/ghcr.io/linyinfeng/oranc-cache`;
+                }
+                cliSubstituters += ' ';
+                cliSubstituters += 'https://linyinfeng.cachix.org';
+            }
             yield (0, exec_1.exec)('nix', [
                 ...commonNixArgs,
                 'build',
@@ -121,9 +131,9 @@ extra-trusted-public-keys = ${publicKey}
                 '--out-link',
                 `${dataDirectory}/oranc`,
                 '--extra-substituters',
-                `https://linyinfeng.cachix.org`,
+                cliSubstituters,
                 '--extra-trusted-public-keys',
-                'linyinfeng.cachix.org-1:sPYQXcNrnCf7Vr7T0YmjXz5dMZ7aOKG3EqLja0xr9MM='
+                orancCliPublicKey
             ]);
             (0, core_1.endGroup)();
             (0, core_1.startGroup)('oranc: record store-paths-pre-build');
