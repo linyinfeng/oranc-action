@@ -38802,6 +38802,26 @@ function upload() {
         }
     });
 }
+function should_include_store_path(path, info) {
+    // Lix can omit deriver for .drv paths
+    return info.deriver !== null && info.deriver !== undefined
+        ? true
+        : path.endsWith('.drv');
+}
+let cachedIsLix;
+function is_lix() {
+    return main_awaiter(this, void 0, void 0, function* () {
+        if (cachedIsLix !== undefined) {
+            return cachedIsLix;
+        }
+        const versionOutput = yield getExecOutput('nix', ['--version']);
+        if (versionOutput.exitCode !== 0) {
+            throw Error('failed to run nix --version');
+        }
+        cachedIsLix = versionOutput.stdout.includes('Lix');
+        return cachedIsLix;
+    });
+}
 function all_store_paths() {
     return main_awaiter(this, void 0, void 0, function* () {
         const pathInfoOutput = yield getExecOutput('nix', [
@@ -38813,10 +38833,21 @@ function all_store_paths() {
         if (pathInfoOutput.exitCode !== 0) {
             throw Error('failed to run nix path-info --all --json');
         }
-        const pathInfo = JSON.parse(pathInfoOutput.stdout);
-        // only cache paths built from some derivation
-        const filtered = Object.fromEntries(Object.entries(pathInfo).filter(([_path, i]) => i.deriver !== null));
-        return Object.keys(filtered);
+        const pathInfoRaw = JSON.parse(pathInfoOutput.stdout);
+        if (yield is_lix()) {
+            if (!Array.isArray(pathInfoRaw)) {
+                throw Error('invalid Lix path-info output: expected top-level array');
+            }
+            return pathInfoRaw
+                .filter(i => i.path !== undefined && should_include_store_path(i.path, i))
+                .map(i => i.path);
+        }
+        if (Array.isArray(pathInfoRaw)) {
+            throw Error('invalid Nix path-info output: expected keyed object');
+        }
+        return Object.entries(pathInfoRaw)
+            .filter(([path, i]) => should_include_store_path(path, i))
+            .map(([path]) => path);
     });
 }
 function get_credentials() {
