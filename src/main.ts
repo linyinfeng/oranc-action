@@ -280,7 +280,7 @@ interface NixPathInfoDict {
 }
 
 function should_include_store_path(path_info: NixPathInfo): boolean {
-  // Lix can omit deriver for .drv paths
+  // Lix can omit the deriver field instead of outputting "deriver": null
   return path_info.deriver !== null && path_info.deriver !== undefined
 }
 
