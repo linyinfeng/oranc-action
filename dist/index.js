@@ -38835,6 +38835,7 @@ function all_store_paths() {
         }
         const pathInfoRaw = JSON.parse(pathInfoOutput.stdout);
         if (yield is_lix()) {
+            // Lix
             if (!Array.isArray(pathInfoRaw)) {
                 throw Error('invalid Lix path-info output: expected top-level array');
             }
@@ -38842,12 +38843,15 @@ function all_store_paths() {
                 .filter(i => i.path !== undefined && should_include_store_path(i.path, i))
                 .map(i => i.path);
         }
-        if (Array.isArray(pathInfoRaw)) {
-            throw Error('invalid Nix path-info output: expected keyed object');
+        else {
+            // Cpp Nix
+            if (Array.isArray(pathInfoRaw)) {
+                throw Error('invalid Nix path-info output: expected keyed object');
+            }
+            return Object.entries(pathInfoRaw)
+                .filter(([path, i]) => should_include_store_path(path, i))
+                .map(([path]) => path);
         }
-        return Object.entries(pathInfoRaw)
-            .filter(([path, i]) => should_include_store_path(path, i))
-            .map(([path]) => path);
     });
 }
 function get_credentials() {

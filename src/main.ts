@@ -288,8 +288,8 @@ function should_include_store_path(
     ? true
     : path.endsWith('.drv')
 }
-let cachedIsLix: boolean | undefined
 
+let cachedIsLix: boolean | undefined
 async function is_lix(): Promise<boolean> {
   if (cachedIsLix !== undefined) {
     return cachedIsLix
@@ -318,21 +318,22 @@ async function all_store_paths(): Promise<string[]> {
     | NixPathInfo[]
 
   if (await is_lix()) {
+    // Lix
     if (!Array.isArray(pathInfoRaw)) {
       throw Error('invalid Lix path-info output: expected top-level array')
     }
     return pathInfoRaw
       .filter(i => i.path !== undefined && should_include_store_path(i.path, i))
       .map(i => i.path as string)
+  } else {
+    // Cpp Nix
+    if (Array.isArray(pathInfoRaw)) {
+      throw Error('invalid Nix path-info output: expected keyed object')
+    }
+    return Object.entries(pathInfoRaw)
+      .filter(([path, i]) => should_include_store_path(path, i))
+      .map(([path]) => path)
   }
-
-  if (Array.isArray(pathInfoRaw)) {
-    throw Error('invalid Nix path-info output: expected keyed object')
-  }
-
-  return Object.entries(pathInfoRaw)
-    .filter(([path, i]) => should_include_store_path(path, i))
-    .map(([path]) => path)
 }
 
 function get_credentials(): {[key: string]: string} {
