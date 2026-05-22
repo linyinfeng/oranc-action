@@ -38670,11 +38670,10 @@ extra-trusted-public-keys = ${publicKey}
             endGroup();
             startGroup('oranc: install oranc');
             let cliSubstituters = orancCliSubstituters;
-            if (cliSubstituters === null) {
+            if (cliSubstituters === '') {
                 if (registry === 'ghcr.io') {
-                    cliSubstituters = `${orancUrlFinal}/ghcr.io/linyinfeng/oranc-cache`;
+                    cliSubstituters = `${orancUrlFinal}/ghcr.io/linyinfeng/oranc-cache `;
                 }
-                cliSubstituters += ' ';
                 cliSubstituters += 'https://linyinfeng.cachix.org';
             }
             yield exec_exec('nix', [
