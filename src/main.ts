@@ -279,9 +279,12 @@ interface NixPathInfoDict {
   [path: string]: NixPathInfo
 }
 
-function should_include_store_path(path: string, info: NixPathInfo): boolean {
+function should_include_store_path(
+  path: string,
+  path_info: NixPathInfo
+): boolean {
   // Lix can omit deriver for .drv paths
-  return info.deriver !== null && info.deriver !== undefined
+  return path_info.deriver !== null && path_info.deriver !== undefined
     ? true
     : path.endsWith('.drv')
 }

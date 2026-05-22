@@ -38802,9 +38802,9 @@ function upload() {
         }
     });
 }
-function should_include_store_path(path, info) {
+function should_include_store_path(path, path_info) {
     // Lix can omit deriver for .drv paths
-    return info.deriver !== null && info.deriver !== undefined
+    return path_info.deriver !== null && path_info.deriver !== undefined
         ? true
         : path.endsWith('.drv');
 }
