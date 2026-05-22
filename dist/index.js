@@ -38802,11 +38802,9 @@ function upload() {
         }
     });
 }
-function should_include_store_path(path, path_info) {
+function should_include_store_path(path_info) {
     // Lix can omit deriver for .drv paths
-    return path_info.deriver !== null && path_info.deriver !== undefined
-        ? true
-        : path.endsWith('.drv');
+    return path_info.deriver !== null && path_info.deriver !== undefined;
 }
 let cachedIsLix;
 function is_lix() {
@@ -38840,8 +38838,8 @@ function all_store_paths() {
                 throw Error('invalid Lix path-info output: expected top-level array');
             }
             return pathInfoRaw
-                .filter(i => i.path !== undefined && should_include_store_path(i.path, i))
-                .map(i => i.path);
+                .filter(should_include_store_path)
+                .map(path_info => path_info.path);
         }
         else {
             // Cpp Nix
@@ -38849,8 +38847,8 @@ function all_store_paths() {
                 throw Error('invalid Nix path-info output: expected keyed object');
             }
             return Object.entries(pathInfoRaw)
-                .filter(([path, i]) => should_include_store_path(path, i))
-                .map(([path]) => path);
+                .filter(([_path, path_info]) => should_include_store_path(path_info))
+                .map(([path, _path_info]) => path);
         }
     });
 }

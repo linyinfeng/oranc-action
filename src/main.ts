@@ -279,14 +279,9 @@ interface NixPathInfoDict {
   [path: string]: NixPathInfo
 }
 
-function should_include_store_path(
-  path: string,
-  path_info: NixPathInfo
-): boolean {
+function should_include_store_path(path_info: NixPathInfo): boolean {
   // Lix can omit deriver for .drv paths
   return path_info.deriver !== null && path_info.deriver !== undefined
-    ? true
-    : path.endsWith('.drv')
 }
 
 let cachedIsLix: boolean | undefined
@@ -323,16 +318,16 @@ async function all_store_paths(): Promise<string[]> {
       throw Error('invalid Lix path-info output: expected top-level array')
     }
     return pathInfoRaw
-      .filter(i => i.path !== undefined && should_include_store_path(i.path, i))
-      .map(i => i.path as string)
+      .filter(should_include_store_path)
+      .map(path_info => path_info.path as string)
   } else {
     // Cpp Nix
     if (Array.isArray(pathInfoRaw)) {
       throw Error('invalid Nix path-info output: expected keyed object')
     }
     return Object.entries(pathInfoRaw)
-      .filter(([path, i]) => should_include_store_path(path, i))
-      .map(([path]) => path)
+      .filter(([_path, path_info]) => should_include_store_path(path_info))
+      .map(([path, _path_info]) => path)
   }
 }
 
