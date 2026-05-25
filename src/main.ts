@@ -271,11 +271,30 @@ async function upload(): Promise<void> {
 }
 
 interface NixPathInfo {
-  deriver: string | null
+  path?: string
+  deriver?: string | null
 }
 
 interface NixPathInfoDict {
   [path: string]: NixPathInfo
+}
+
+function should_include_store_path(path_info: NixPathInfo): boolean {
+  // Lix can omit the deriver field instead of outputting "deriver": null
+  return path_info.deriver !== null && path_info.deriver !== undefined
+}
+
+let cachedIsLix: boolean | undefined
+async function is_lix(): Promise<boolean> {
+  if (cachedIsLix !== undefined) {
+    return cachedIsLix
+  }
+  const versionOutput = await getExecOutput('nix', ['--version'])
+  if (versionOutput.exitCode !== 0) {
+    throw Error('failed to run nix --version')
+  }
+  cachedIsLix = versionOutput.stdout.includes('Lix')
+  return cachedIsLix
 }
 
 async function all_store_paths(): Promise<string[]> {
@@ -288,12 +307,28 @@ async function all_store_paths(): Promise<string[]> {
   if (pathInfoOutput.exitCode !== 0) {
     throw Error('failed to run nix path-info --all --json')
   }
-  const pathInfo = JSON.parse(pathInfoOutput.stdout) as NixPathInfoDict
-  // only cache paths built from some derivation
-  const filtered = Object.fromEntries(
-    Object.entries(pathInfo).filter(([_path, i]) => i.deriver !== null)
-  )
-  return Object.keys(filtered)
+
+  const pathInfoRaw = JSON.parse(pathInfoOutput.stdout) as
+    | NixPathInfoDict
+    | NixPathInfo[]
+
+  if (await is_lix()) {
+    // Lix
+    if (!Array.isArray(pathInfoRaw)) {
+      throw Error('invalid Lix path-info output: expected top-level array')
+    }
+    return pathInfoRaw
+      .filter(should_include_store_path)
+      .map(path_info => path_info.path as string)
+  } else {
+    // Cpp Nix
+    if (Array.isArray(pathInfoRaw)) {
+      throw Error('invalid Nix path-info output: expected keyed object')
+    }
+    return Object.entries(pathInfoRaw)
+      .filter(([_path, path_info]) => should_include_store_path(path_info))
+      .map(([path, _path_info]) => path)
+  }
 }
 
 function get_credentials(): {[key: string]: string} {

@@ -38802,6 +38802,24 @@ function upload() {
         }
     });
 }
+function should_include_store_path(path_info) {
+    // Lix can omit the deriver field instead of outputting "deriver": null
+    return path_info.deriver !== null && path_info.deriver !== undefined;
+}
+let cachedIsLix;
+function is_lix() {
+    return main_awaiter(this, void 0, void 0, function* () {
+        if (cachedIsLix !== undefined) {
+            return cachedIsLix;
+        }
+        const versionOutput = yield getExecOutput('nix', ['--version']);
+        if (versionOutput.exitCode !== 0) {
+            throw Error('failed to run nix --version');
+        }
+        cachedIsLix = versionOutput.stdout.includes('Lix');
+        return cachedIsLix;
+    });
+}
 function all_store_paths() {
     return main_awaiter(this, void 0, void 0, function* () {
         const pathInfoOutput = yield getExecOutput('nix', [
@@ -38813,10 +38831,25 @@ function all_store_paths() {
         if (pathInfoOutput.exitCode !== 0) {
             throw Error('failed to run nix path-info --all --json');
         }
-        const pathInfo = JSON.parse(pathInfoOutput.stdout);
-        // only cache paths built from some derivation
-        const filtered = Object.fromEntries(Object.entries(pathInfo).filter(([_path, i]) => i.deriver !== null));
-        return Object.keys(filtered);
+        const pathInfoRaw = JSON.parse(pathInfoOutput.stdout);
+        if (yield is_lix()) {
+            // Lix
+            if (!Array.isArray(pathInfoRaw)) {
+                throw Error('invalid Lix path-info output: expected top-level array');
+            }
+            return pathInfoRaw
+                .filter(should_include_store_path)
+                .map(path_info => path_info.path);
+        }
+        else {
+            // Cpp Nix
+            if (Array.isArray(pathInfoRaw)) {
+                throw Error('invalid Nix path-info output: expected keyed object');
+            }
+            return Object.entries(pathInfoRaw)
+                .filter(([_path, path_info]) => should_include_store_path(path_info))
+                .map(([path, _path_info]) => path);
+        }
     });
 }
 function get_credentials() {
