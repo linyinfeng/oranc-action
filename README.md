@@ -37,9 +37,9 @@ Use an OCI registry (typically, [ghcr.io](https://ghcr.io)) to distribute binary
        oranc:
          image: ghcr.io/linyinfeng/oranc
      steps:
-       - uses: actions/checkout@v3
+       - uses: actions/checkout@v7
        - name: Install nix
-         uses: cachix/install-nix-action@v20
+         uses: cachix/install-nix-action@v31
        - uses: linyinfeng/oranc-action@v1
          with:
            # pass oranc container id to the action
