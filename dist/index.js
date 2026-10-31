@@ -38711,15 +38711,15 @@ extra-trusted-public-keys = ${publicKey}
                     }
                 }
                 if (doInitialize) {
-                    const credentials = get_credentials();
                     const extraArgs = get_oranc_extra_args();
                     const initializeArgs = ['--priority', initializePriority];
                     if (initializeMassQuery !== 'true') {
                         initializeArgs.push('--no-mass-query');
                     }
+                    const env = oranc_process_env();
                     yield exec_exec('sudo', // to open nix db
                     [
-                        '-E', // pass environment variables
+                        ...sudo_preserve_env(env),
                         `${dataDirectory}/oranc/bin/oranc`,
                         'push',
                         '--registry',
@@ -38731,9 +38731,7 @@ extra-trusted-public-keys = ${publicKey}
                         ...extraArgs,
                         'initialize',
                         ...initializeArgs
-                    ], {
-                        env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), credentials)
-                    });
+                    ], { env });
                 }
             }
         }
@@ -38767,13 +38765,13 @@ function upload() {
             info(`took ${end - begin} ms.`);
             endGroup();
             startGroup('oranc: push store paths');
-            const credentials = get_credentials();
             const extraArgs = get_oranc_extra_args();
+            const env = oranc_process_env();
             info(`begin coping...`);
             begin = performance.now();
             yield exec_exec('sudo', // to open nix db
             [
-                '-E', // pass environment variables
+                ...sudo_preserve_env(env),
                 `${dataDirectory}/oranc/bin/oranc`,
                 'push',
                 '--no-closure',
@@ -38789,7 +38787,7 @@ function upload() {
                 zstdLevel,
                 ...extraArgs
             ], {
-                env: Object.assign(Object.assign(Object.assign({}, process.env), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), credentials),
+                env,
                 input: Buffer.from(storePaths.join('\n'))
             });
             end = performance.now();
@@ -38861,6 +38859,27 @@ function get_credentials() {
         };
     }
     return credentials;
+}
+function oranc_process_env() {
+    // `exec` only accepts a string map, and `process.env` is typed with
+    // `undefined`, so rebuild it instead of spreading.
+    const inherited = {};
+    for (const [name, value] of Object.entries(process.env)) {
+        if (value !== undefined) {
+            inherited[name] = value;
+        }
+    }
+    return Object.assign(Object.assign(Object.assign({}, inherited), { RUST_LOG: orancLog, ORANC_SIGNING_KEY: signingKey }), get_credentials());
+}
+// sudo-rs, the default on Ubuntu 26.04, drops `-E` with a warning, so name the
+// variables instead: `--preserve-env=list` is understood by both sudo
+// implementations and, fed with the whole environment, keeps the old meaning.
+// https://github.com/trifectatechfoundation/sudo-rs/issues/1299
+function sudo_preserve_env(env) {
+    // sudo only accepts sound variable names, so decorated ones such as the
+    // `BASH_FUNC_*%%` entries are dropped, as `-E` did
+    const names = Object.keys(env).filter(name => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name));
+    return names.length === 0 ? [] : [`--preserve-env=${names.join(',')}`];
 }
 function get_oranc_extra_args() {
     if (orancCliExtraArgs === '') {
