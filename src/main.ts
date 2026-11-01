@@ -297,8 +297,7 @@ async function all_store_paths(): Promise<string[]> {
   }
 
   const pathInfoRaw = JSON.parse(pathInfoOutput.stdout) as
-    | NixPathInfoDict
-    | NixPathInfo[]
+    NixPathInfoDict | NixPathInfo[]
 
   if (await is_lix()) {
     // Lix
