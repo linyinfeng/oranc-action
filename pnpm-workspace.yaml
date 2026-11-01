@@ -1,6 +1,5 @@
 allowBuilds:
   '@parcel/watcher': false
-  pnpm: false
   unrs-resolver: true
 
 minimumReleaseAge: 1440
