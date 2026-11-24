@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Install nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v32
         if: matrix.nix == 'cppnix'
         with:
           nix_path: nixpkgs=channel:nixos-unstable
@@ -83,7 +83,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Install nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@v32
         if: matrix.nix == 'cppnix'
         with:
           github_access_token: '${{ secrets.GITHUB_TOKEN }}'
